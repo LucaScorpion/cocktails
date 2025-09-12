@@ -1,3 +1,7 @@
+---
+name: Barbancourt rum cup
+---
+
 - 75 ml dark rum
 - 15 ml orgeat syrup
 - 15 ml lime juice
