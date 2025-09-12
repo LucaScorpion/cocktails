@@ -6,6 +6,8 @@ name: Negroni
 - 30 ml Campari
 - 30 ml sweet vermouth
 
+Combine into a rocks glass with big ice cubes.
+
 One of the all-time classics.
 Bittersweet in the best possible way.
 
