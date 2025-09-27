@@ -1,9 +1,25 @@
 @use 'reset';
+@use 'variables';
 
 * {
   scroll-behavior: smooth;
 
   @media (prefers-reduced-motion) {
     scroll-behavior: auto;
+  }
+}
+
+body {
+  background-color: variables.$grey-850;
+  color: variables.$text-light;
+}
+
+section {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+
+  > * {
+    max-width: variables.$content-width;
+    margin: 0 auto;
   }
 }

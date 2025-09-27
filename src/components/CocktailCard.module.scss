@@ -1,0 +1,8 @@
+@use '../styles/variables';
+
+.card {
+  border: 2px solid variables.$grey-300;
+  border-radius: 2px;
+  background-color: variables.$amber-950;
+  padding: 1rem;
+}
