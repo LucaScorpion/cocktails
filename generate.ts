@@ -12,7 +12,7 @@ void (async () => {
   const cocktailVars: [string, string][] = [];
   for (const file of files) {
     const cocktail = await processCocktail(file);
-    cocktailVars.push(generateCode(file, cocktail));
+    cocktailVars.push([cocktail.id, generateCode(cocktail)]);
   }
 
   const code = `${cocktailVars.map(([, code]) => code).join('\n')}
@@ -28,6 +28,10 @@ export const cocktails = [
 async function processCocktail(file: string): Promise<Cocktail> {
   console.log(`- ${file}`);
   const fileContent = (await fs.readFile(path.join(cocktailsDir, file))).toString();
+
+  const id = file
+    .substring(0, file.indexOf('.'))
+    .replaceAll(' ', '_');
 
   // Get the front matter properties.
   const frontMatter: Record<string, string> = fileContent
@@ -56,7 +60,12 @@ async function processCocktail(file: string): Promise<Cocktail> {
   // The description is the rest of the content.
   const description = content.substring(content.indexOf('\n\n')).trim();
 
-  return {name: frontMatter.name, ingredients, description};
+  return {
+    id,
+    name: frontMatter.name,
+    ingredients,
+    description
+  };
 }
 
 function processIngredient(line: string): Ingredient {
@@ -78,12 +87,6 @@ function processIngredient(line: string): Ingredient {
   return {amount, unit, name};
 }
 
-function generateCode(fileName: string, cocktail: Cocktail): [string, string] {
-  const varName = fileName
-    .substring(0, fileName.indexOf('.'))
-    .replaceAll(' ', '_');
-
-  const code = `const ${varName} = ${JSON.stringify(cocktail, null, 2)};`;
-
-  return [varName, code];
+function generateCode(cocktail: Cocktail): string {
+  return `const ${cocktail.id} = ${JSON.stringify(cocktail, null, 2)};`;
 }

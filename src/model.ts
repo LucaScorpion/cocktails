@@ -1,4 +1,5 @@
 export interface Cocktail {
+  id: string;
   name: string;
   ingredients: Ingredient[];
   description: string;
