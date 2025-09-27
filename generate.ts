@@ -1,28 +1,54 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { type Cocktail, type Ingredient, isUnit, type Unit } from './src/model.ts';
+import { type Cocktail, type Ingredient } from './src/model.ts';
 
 const cocktailsDir = path.resolve(import.meta.dirname, 'cocktails');
-
-const unitMapping: Record<string, Unit> = {
-  dashes: 'dash'
-};
+const outFile = path.resolve(import.meta.dirname, 'src', 'cocktails.ts');
 
 void (async () => {
   const files = await fs.readdir(cocktailsDir);
 
+  // Variable name to code.
+  const cocktailVars: [string, string][] = [];
   for (const file of files) {
-    await processCocktail(file);
+    const cocktail = await processCocktail(file);
+    cocktailVars.push(generateCode(file, cocktail));
   }
+
+  const code = `${cocktailVars.map(([, code]) => code).join('\n')}
+  
+export const cocktails = [
+  ${cocktailVars.map(([name]) => name).join(',\n  ')}
+];
+`;
+
+  await fs.writeFile(outFile, code);
 })();
 
 async function processCocktail(file: string): Promise<Cocktail> {
   console.log(`- ${file}`);
-  const content = (await fs.readFile(path.join(cocktailsDir, file))).toString();
+  const fileContent = (await fs.readFile(path.join(cocktailsDir, file))).toString();
 
-  const name = file.substring(0, file.lastIndexOf('.'));
+  // Get the front matter properties.
+  const frontMatter: Record<string, string> = fileContent
+    // Skip the front matter opening.
+    .substring(3)
+    .split('---\n')[0]
+    .trim()
+    // Process each line.
+    .split('\n')
+    .map((line) => line.trim().split(': '))
+    // Add each property key and value to an object.
+    .reduce((acc, [k, v]) => ({...acc, [k]: v}), {});
 
-  // The ingredients are a list in the first paragraph.
+  if (!frontMatter.name) {
+    throw new Error('Name missing from front matter');
+  }
+
+  // Get the content.
+  const content = fileContent.substring(fileContent.indexOf('---\n', 3) + 4).trim();
+
+  // The ingredients are a list in the first paragraph of the content.
   const ingredients = content.split('\n\n')[0].trim()
     .split('\n')
     .map(processIngredient);
@@ -30,7 +56,7 @@ async function processCocktail(file: string): Promise<Cocktail> {
   // The description is the rest of the content.
   const description = content.substring(content.indexOf('\n\n')).trim();
 
-  return {name, ingredients, description};
+  return {name: frontMatter.name, ingredients, description};
 }
 
 function processIngredient(line: string): Ingredient {
@@ -45,12 +71,19 @@ function processIngredient(line: string): Ingredient {
     throw new Error(`Ingredient amount must be a number: ${line}`);
   }
 
-  const unit = unitMapping[parts[1]] ?? parts[1];
-  if (!isUnit(unit)) {
-    throw new Error(`Ingredient unit is not valid: ${line}`);
-  }
+  const unit = parts[1];
 
   const name = parts.slice(2).join(' ');
 
   return {amount, unit, name};
+}
+
+function generateCode(fileName: string, cocktail: Cocktail): [string, string] {
+  const varName = fileName
+    .substring(0, fileName.indexOf('.'))
+    .replaceAll(' ', '_');
+
+  const code = `const ${varName} = ${JSON.stringify(cocktail, null, 2)};`;
+
+  return [varName, code];
 }
